@@ -1,7 +1,9 @@
 from typing import Annotated, Literal
 
 from dotenv import load_dotenv
-from langchain.chat_models import init_chat_model
+
+# 1. 改為引入 ChatOllama
+from langchain_ollama import ChatOllama
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
@@ -9,7 +11,12 @@ from typing_extensions import TypedDict
 
 load_dotenv()
 
-llm = init_chat_model("anthropic:claude-3-5-sonnet-latest")
+# 2. 初始化 Ollama 模型
+# model 名稱必須跟你用 ollama pull 下來的名稱一致
+llm = ChatOllama(
+    model="llama3",
+    temperature=0.3,  # 可以調低溫度讓分類更穩定
+)
 
 
 class MessageClassifier(BaseModel):
@@ -26,6 +33,8 @@ class State(TypedDict):
 
 def classify_message(state: State):
     last_message = state["messages"][-1]
+
+    # Ollama 的最新套件完美支援 with_structured_output
     classifier_llm = llm.with_structured_output(MessageClassifier)
 
     result = classifier_llm.invoke(
